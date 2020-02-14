@@ -9,10 +9,9 @@ import (
 )
 
 var (
-	ErrorNilSource        = errors.New("source object is nil")
-	ErrorNilDest          = errors.New("destination object is nil")
-	ErrorTypeNotMatch     = errors.New("types of source and destination objects do not match")
-	ErrorFieldPathInvalid = errors.New("field path invalid")
+	ErrorNilSource    = errors.New("source object is nil")
+	ErrorNilDest      = errors.New("destination object is nil")
+	ErrorTypeNotMatch = errors.New("types of source and destination objects do not match")
 )
 
 // Merge will take the fields of `source` that are included as
@@ -38,6 +37,10 @@ pathsloop:
 
 		subpaths := strings.Split(fullpath, ".")
 		for _, path := range subpaths {
+			// return all fields when path equals to *
+			if path == "*" {
+				break
+			}
 			for dstVal.Kind() == reflect.Ptr {
 				if dstVal.IsNil() {
 					dstVal.Set(reflect.New(dstVal.Type().Elem()))
@@ -46,6 +49,7 @@ pathsloop:
 				srcVal = srcVal.Elem()
 			}
 
+			// avoid panic when dstVal.Kind() is not struct
 			if dstVal.Kind() != reflect.Struct {
 				continue pathsloop
 			}

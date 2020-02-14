@@ -115,6 +115,33 @@ func TestFieldMask(t *testing.T) {
 		validate(t, testUserFull, req)
 	})
 
+	t.Run("all", func(t *testing.T) {
+		req := &testproto.UpdateUserRequest{
+			User: new(testproto.User),
+			FieldMask: &field_mask.FieldMask{
+				Paths: []string{"*"},
+			},
+		}
+
+		err := Merge(testUserFull, req.User, req.GetFieldMask())
+		assert.Nil(t, err)
+		validate(t, testUserFull, req)
+	})
+
+	t.Run("sub all", func(t *testing.T) {
+		req := &testproto.UpdateUserRequest{
+			User: new(testproto.User),
+			FieldMask: &field_mask.FieldMask{
+				Paths: []string{"Avatar.*"},
+			},
+		}
+
+		err := Merge(testUserFull, req.User, req.GetFieldMask())
+		assert.Nil(t, err)
+		assert.NotEqual(t, testUserFull, req.User)
+		assert.Equal(t, testUserFull.Avatar, req.User.Avatar)
+	})
+
 	t.Run("invalid path", func(t *testing.T) {
 		req := &testproto.UpdateUserRequest{
 			User: new(testproto.User),
@@ -183,13 +210,28 @@ func TestFieldMask(t *testing.T) {
 
 func BenchmarkFieldMask(b *testing.B) {
 
-	b.Run("merge", func(b *testing.B) {
+	b.Run("normal", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			req := &testproto.UpdateUserRequest{
 				User: new(testproto.User),
 				FieldMask: &field_mask.FieldMask{
 					Paths: []string{"Id", "Avatar.OriginalUrl", "Tags", "Images", "Permissions", "Details"},
+				},
+			}
+
+			err := Merge(testUserFull, req.User, req.GetFieldMask())
+			assert.Nil(b, err)
+		}
+	})
+
+	b.Run("all", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			req := &testproto.UpdateUserRequest{
+				User: new(testproto.User),
+				FieldMask: &field_mask.FieldMask{
+					Paths: []string{"*"},
 				},
 			}
 
